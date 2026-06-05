@@ -1,0 +1,12 @@
+[submodule "lib/forge-std"]
+	path = lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "lib/confidential-token"]
+	path = lib/confidential-token
+	url = https://github.com/skalenetwork/confidential-token
+[submodule "lib/openzeppelin-contracts"]
+	path = lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "lib/bite-solidity"]
+	path = lib/bite-solidity
+	url = https://github.com/skalenetwork/bite-solidity
