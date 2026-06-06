@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import "forge-std/Script.sol";
-import "../src/StakingDapp.sol";
+import {StakingDapp} from "src/StakingDapp.sol";
+import {Script, console} from "forge-std/Script.sol";
 
 contract Deploy is Script {
     function run() external {

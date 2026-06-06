@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Staking on SKALE</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #ffffff;
+        }
+        h1 { color: #00ff88; }
+        button {
+            background: #00ff88;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        input {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #00ff88;
+            background: #1a1a1a;
+            color: white;
+            width: 200px;
+        }
+        .card {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 1px solid #333;
+        }
+        .success { color: #00ff88; }
+        .error { color: #ff4444; }
+    </style>
+</head>
+<body>
+
+    <h1>🔒 Private Staking Protocol</h1>
+    <p>Built on SKALE — Zero Gas Fees ⚡</p>
+
+    <div class="card">
+        <button id="connectBtn">Connect Wallet</button>
+        <p>Wallet: <span id="walletAddress">Not connected</span></p>
+        <p>Network: <span id="networkName">-</span></p>
+    </div>
+
+    <div class="card">
+        <h2>💰 Stake ETH</h2>
+        <input type="number" id="stakeAmount" placeholder="Amount in ETH" step="0.01"/>
+        <button id="stakeBtn">Stake</button>
+        <p id="stakeStatus"></p>
+    </div>
+
+    <div class="card">
+        <h2>📊 Your Stake Info</h2>
+        <button id="refreshBtn">Refresh</button>
+        <p>Staked: <span id="stakedAmount">-</span> ETH</p>
+        <p>Time Left: <span id="timeLeft">-</span></p>
+        <p>Reward: <span id="rewardAmount">-</span> ETH</p>
+    </div>
+
+    <div class="card">
+        <h2>💸 Unstake</h2>
+        <button id="unstakeBtn">Unstake + Claim Reward</button>
+        <p id="unstakeStatus"></p>
+    </div>
+
+    <script>
+        const CONTRACT_ADDRESS = "0x185275D723bCeDB6953652797b8a6f3107Bdaebf";
+
+        const ABI = [
+            "function stake(uint256 _amount) public",
+            "function unstake() public",
+            "function claimReward() public",
+            "function getStakeInfo(address user) public view returns (uint256, uint256, uint256, bool)",
+            "function getTimeLeft(address user) public view returns (uint256)"
+        ];
+
+        let provider, signer, contract;
+
+        document.getElementById("connectBtn").onclick = async () => {
+            try {
+                provider = new ethers.BrowserProvider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = await provider.getSigner();
+                const address = await signer.getAddress();
+                const network = await provider.getNetwork();
+
+                document.getElementById("walletAddress").innerText = 
+                    address.slice(0,6) + "..." + address.slice(-4);
+                document.getElementById("networkName").innerText = 
+                    network.chainId == 974399131n ? "SKALE Base Sepolia ✅" : "Wrong Network ❌";
+
+                contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+                document.getElementById("connectBtn").innerText = "Connected ✅";
+
+            } catch(e) {
+                console.error(e);
+            }
+        };
+
+        document.getElementById("stakeBtn").onclick = async () => {
+            try {
+                const amount = document.getElementById("stakeAmount").value;
+                if (!amount) return alert("Enter an amount!");
+                
+                document.getElementById("stakeStatus").innerText = "Staking...";
+                const tx = await contract.stake(ethers.parseEther(amount));
+                await tx.wait();
+                document.getElementById("stakeStatus").className = "success";
+                document.getElementById("stakeStatus").innerText = "✅ Staked successfully!";
+                refreshInfo();
+            } catch(e) {
+                document.getElementById("stakeStatus").className = "error";
+                document.getElementById("stakeStatus").innerText = "❌ " + e.message;
+            }
+        };
+
+        async function refreshInfo() {
+            try {
+                const address = await signer.getAddress();
+                const info = await contract.getStakeInfo(address);
+                const timeLeft = await contract.getTimeLeft(address);
+
+                document.getElementById("stakedAmount").innerText = 
+                    ethers.formatEther(info[0]);
+                document.getElementById("rewardAmount").innerText = 
+                    ethers.formatEther(info[2]);
+
+                const days = Math.floor(Number(timeLeft) / 86400);
+                const hours = Math.floor((Number(timeLeft) % 86400) / 3600);
+                document.getElementById("timeLeft").innerText = 
+                    timeLeft == 0 ? "✅ Ready to unstake!" : days + "d " + hours + "h left";
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        document.getElementById("refreshBtn").onclick = refreshInfo;
+
+        document.getElementById("unstakeBtn").onclick = async () => {
+            try {
+                document.getElementById("unstakeStatus").innerText = "Unstaking...";
+                const tx = await contract.unstake();
+                await tx.wait();
+                document.getElementById("unstakeStatus").className = "success";
+                document.getElementById("unstakeStatus").innerText = "✅ Unstaked successfully!";
+                refreshInfo();
+            } catch(e) {
+                document.getElementById("unstakeStatus").className = "error";
+                document.getElementById("unstakeStatus").innerText = "❌ " + e.message;
+            }
+        };
+    </script>
+
+</body>
+</html>
