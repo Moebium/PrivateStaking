@@ -83,10 +83,10 @@
     </div>
 
     <script>
-       const CONTRACT_ADDRESS = "0xF95a8A5ba4eDf4356bC373f272b71F2AfB1bC8A4";
+       const CONTRACT_ADDRESS = "0x7Cd9831149E60cca078ec1013D9EB154c4dcEdF5";
 
         const ABI = [
-            "function stake(uint256 _amount) public",
+            "function stake() public payable",
             "function unstake() public",
             "function claimReward() public",
             "function getStakeInfo(address user) public view returns (uint256, uint256, uint256, bool)",
@@ -122,7 +122,7 @@
                 if (!amount) return alert("Enter an amount!");
                 
                 document.getElementById("stakeStatus").innerText = "Staking...";
-                const tx = await contract.stake(ethers.parseEther(amount));
+                const tx = await contract.stake({ value: ethers.parseEther(amount) });
                 await tx.wait();
                 document.getElementById("stakeStatus").className = "success";
                 document.getElementById("stakeStatus").innerText = "✅ Staked successfully!";

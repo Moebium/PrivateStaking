@@ -41,13 +41,13 @@ contract StakingDapp {
     }
 
     // 7. Functions
-    function stake(uint256 _amount) public onlyNotStaking {
-        require(_amount > 0, "Amount must be more than 0");
+    function stake() public payable onlyNotStaking {
+        require(msg.value > 0, "Amount must be more than 0");
         StakeInfo storage userStake = stakes[msg.sender];
-        userStake.amount = _amount;
+        userStake.amount = msg.value;
         userStake.timestamp = block.timestamp;
         userStake.isStaking = true;
-        emit Staked(msg.sender, _amount, block.timestamp);
+        emit Staked(msg.sender, msg.value, block.timestamp);
     }
 
     function unstake() public {
@@ -80,6 +80,10 @@ contract StakingDapp {
 
         payable(msg.sender).transfer(rewardToTransfer);
         emit RewardClaimed(msg.sender, rewardToTransfer);
+    }
+
+    function depositRewardPool() public payable onlyOwner {
+        require(msg.value > 0, "Must deposit mote than 0");
     }
     // 8. View functions
     function getStakeInfo(address _user) public view returns (uint256 amount, uint256 timestamp,  uint256 reward, bool isStaking) {
