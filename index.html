@@ -76,8 +76,14 @@
         <p id="unstakeStatus"></p>
     </div>
 
+    <div class="card">
+        <h2>🎁 Claim Reward</h2>
+        <button id="claimBtn">Claim Reward</button>
+        <p id="claimStatus"></p>
+    </div>
+
     <script>
-        const CONTRACT_ADDRESS = "0x185275D723bCeDB6953652797b8a6f3107Bdaebf";
+       const CONTRACT_ADDRESS = "0xF95a8A5ba4eDf4356bC373f272b71F2AfB1bC8A4";
 
         const ABI = [
             "function stake(uint256 _amount) public",
@@ -160,6 +166,20 @@
             } catch(e) {
                 document.getElementById("unstakeStatus").className = "error";
                 document.getElementById("unstakeStatus").innerText = "❌ " + e.message;
+            }
+        };
+
+        document.getElementById("claimBtn").onclick = async () => {
+            try {
+                document.getElementById("claimStatus").innerText = "Claiming...";
+                const tx = await contract.claimReward();
+                await tx.wait();
+                document.getElementById("claimStatus").className = "success";
+                document.getElementById("claimStatus").innerText = "✅ Reward claimed!";
+                refreshInfo();
+            } catch(e) {
+                document.getElementById("claimStatus").className = "error";
+                document.getElementById("claimStatus").innerText = "❌ " + e.message;
             }
         };
     </script>

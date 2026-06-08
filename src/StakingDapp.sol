@@ -51,28 +51,28 @@ contract StakingDapp {
     }
 
     function unstake() public {
-    StakeInfo storage userStake = stakes[msg.sender];
-    require(userStake.isStaking, "You are not staking");
-    require(block.timestamp >= userStake.timestamp + LOCK_PERIOD, "Lock period not over");
-    
-    uint256 rewardAmount = (userStake.amount * REWARD_RATE) / 100;
-    uint256 amountToTransfer = userStake.amount;
-    
-    // Reset everything before transfer (security pattern)
-    userStake.amount = 0;
-    userStake.timestamp = 0;
-    userStake.isStaking = false;
-    userStake.reward = 0;
+        StakeInfo storage userStake = stakes[msg.sender];
+        require(userStake.isStaking, "You are not staking");
+        require(block.timestamp >= userStake.timestamp + LOCK_PERIOD, "Lock period not over");
+        
+        uint256 rewardAmount = (userStake.amount * REWARD_RATE) / 100;
+        userStake.reward = rewardAmount;
 
-    uint256 totalPayout = amountToTransfer + rewardAmount;
-    payable(msg.sender).transfer(totalPayout);
-    emit Unstaked(msg.sender, amountToTransfer);
+        uint256 amountToTransfer = userStake.amount;
+        
+        // Reset everything before transfer (security pattern)
+        userStake.amount = 0;
+        userStake.timestamp = 0;
+        userStake.isStaking = false;
+
+        payable(msg.sender).transfer(amountToTransfer);
+        emit Unstaked(msg.sender, amountToTransfer);
     }
 
     function claimReward() public {
         StakeInfo storage userStake = stakes[msg.sender];
 
-        require(userStake.isStaking, "You Are Not Staking");
+        require(!userStake.isStaking, "Must unstake principal first");
         require(userStake.reward > 0, "No reward to claim");
 
         uint256 rewardToTransfer = userStake.reward;
