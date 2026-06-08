@@ -76,19 +76,13 @@
         <p id="unstakeStatus"></p>
     </div>
 
-    <div class="card">
-        <h2>🎁 Claim Reward</h2>
-        <button id="claimBtn">Claim Reward</button>
-        <p id="claimStatus"></p>
-    </div>
-
     <script>
-       const CONTRACT_ADDRESS = "0x7Cd9831149E60cca078ec1013D9EB154c4dcEdF5";
+        const CONTRACT_ADDRESS = "0x5F99d7C0733d5D11374a4696e344660aFD0d85D8";
+
 
         const ABI = [
             "function stake() public payable",
             "function unstake() public",
-            "function claimReward() public",
             "function getStakeInfo(address user) public view returns (uint256, uint256, uint256, bool)",
             "function getTimeLeft(address user) public view returns (uint256)"
         ];
@@ -166,20 +160,6 @@
             } catch(e) {
                 document.getElementById("unstakeStatus").className = "error";
                 document.getElementById("unstakeStatus").innerText = "❌ " + e.message;
-            }
-        };
-
-        document.getElementById("claimBtn").onclick = async () => {
-            try {
-                document.getElementById("claimStatus").innerText = "Claiming...";
-                const tx = await contract.claimReward();
-                await tx.wait();
-                document.getElementById("claimStatus").className = "success";
-                document.getElementById("claimStatus").innerText = "✅ Reward claimed!";
-                refreshInfo();
-            } catch(e) {
-                document.getElementById("claimStatus").className = "error";
-                document.getElementById("claimStatus").innerText = "❌ " + e.message;
             }
         };
     </script>

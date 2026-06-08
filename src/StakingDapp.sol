@@ -22,8 +22,7 @@ contract StakingDapp {
     // 4. Events
     event Staked(address indexed user, uint256 amount, uint256 timestamp);
     event Unstaked(address indexed user, uint256 amount);
-    event RewardClaimed(address indexed user, uint256 reward);
-
+   
     // 5. Modifiers
     modifier onlyOwner() {
         require(msg.sender == owner, "Not owner");
@@ -56,34 +55,18 @@ contract StakingDapp {
         require(block.timestamp >= userStake.timestamp + LOCK_PERIOD, "Lock period not over");
         
         uint256 rewardAmount = (userStake.amount * REWARD_RATE) / 100;
-        userStake.reward = rewardAmount;
-
-        uint256 amountToTransfer = userStake.amount;
+        uint256 totalToTransfer = userStake.amount + rewardAmount;
         
-        // Reset everything before transfer (security pattern)
         userStake.amount = 0;
         userStake.timestamp = 0;
+        userStake.reward = 0;
         userStake.isStaking = false;
 
-        payable(msg.sender).transfer(amountToTransfer);
-        emit Unstaked(msg.sender, amountToTransfer);
+        payable(msg.sender).transfer(totalToTransfer);
+        emit Unstaked(msg.sender, totalToTransfer);
     }
-
-    function claimReward() public {
-        StakeInfo storage userStake = stakes[msg.sender];
-
-        require(!userStake.isStaking, "Must unstake principal first");
-        require(userStake.reward > 0, "No reward to claim");
-
-        uint256 rewardToTransfer = userStake.reward;
-        userStake.reward = 0;
-
-        payable(msg.sender).transfer(rewardToTransfer);
-        emit RewardClaimed(msg.sender, rewardToTransfer);
-    }
-
     function depositRewardPool() public payable onlyOwner {
-        require(msg.value > 0, "Must deposit mote than 0");
+        require(msg.value > 0, "Must deposit more than 0");
     }
     // 8. View functions
     function getStakeInfo(address _user) public view returns (uint256 amount, uint256 timestamp,  uint256 reward, bool isStaking) {
