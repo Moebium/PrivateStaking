@@ -63,7 +63,9 @@ contract StakingDapp {
         userStake.reward = 0;
         userStake.isStaking = false;
 
-        payable(msg.sender).transfer(totalToTransfer);
+        (bool success, ) = payable(msg.sender).call{value: totalToTransfer}("");
+        require(success, "Transfer failed");
+
         emit Unstaked(msg.sender, totalToTransfer);
     }
 

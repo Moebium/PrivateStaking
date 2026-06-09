@@ -84,7 +84,7 @@
     </div>
 
     <script>
-        const CONTRACT_ADDRESS = "0x8F1D52994fFa44eC4C28cf0e42E7A345A267a0b1";
+        const CONTRACT_ADDRESS = "0x6B0590DA16a9dd59c6bDEdE438F053f3ada9990B";
 
 
         const ABI = [
@@ -145,7 +145,6 @@
                 const info = await contract.getStakeInfo(address);
                 const timeLeft = await contract.getTimeLeft(address);
 
-                // Fix 2 — calculate estimated reward on frontend
                 const stakedAmountWei = info[0];
                 const estimatedRewardWei = (stakedAmountWei * 10n) / 100n;
 
@@ -154,10 +153,16 @@
                 document.getElementById("rewardAmount").innerText = 
                     ethers.formatEther(estimatedRewardWei);
 
-                const days = Math.floor(Number(timeLeft) / 86400);
-                const hours = Math.floor((Number(timeLeft) % 86400) / 3600);
-                document.getElementById("timeLeft").innerText = 
-                    timeLeft == 0 ? "✅ Ready to unstake!" : days + "d " + hours + "h left";
+                // OPTIMASI VISUAL: Cek terlebih dahulu apakah ada dana yang di-stake
+                if (stakedAmountWei == 0n) {
+                    document.getElementById("timeLeft").innerText = "No active stake";
+                } else if (timeLeft == 0) {
+                    document.getElementById("timeLeft").innerText = "✅ Ready to unstake!";
+                } else {
+                    const days = Math.floor(Number(timeLeft) / 86400);
+                    const hours = Math.floor((Number(timeLeft) % 86400) / 3600);
+                    document.getElementById("timeLeft").innerText = days + "d " + hours + "h left";
+                }
             } catch(e) {
                 console.error(e);
             }
