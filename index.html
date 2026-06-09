@@ -127,16 +127,24 @@
             }
         };
 
-        async function refreshInfo() {
+       async function refreshInfo() {
+            if (!contract || !signer) {
+                alert("Please connect your wallet first!");
+                return;
+            }
             try {
                 const address = await signer.getAddress();
                 const info = await contract.getStakeInfo(address);
                 const timeLeft = await contract.getTimeLeft(address);
 
+                // Fix 2 — calculate estimated reward on frontend
+                const stakedAmountWei = info[0];
+                const estimatedRewardWei = (stakedAmountWei * 10n) / 100n;
+
                 document.getElementById("stakedAmount").innerText = 
-                    ethers.formatEther(info[0]);
+                    ethers.formatEther(stakedAmountWei);
                 document.getElementById("rewardAmount").innerText = 
-                    ethers.formatEther(info[2]);
+                    ethers.formatEther(estimatedRewardWei);
 
                 const days = Math.floor(Number(timeLeft) / 86400);
                 const hours = Math.floor((Number(timeLeft) % 86400) / 3600);
