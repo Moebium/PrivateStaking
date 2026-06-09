@@ -76,13 +76,21 @@
         <p id="unstakeStatus"></p>
     </div>
 
+    <div class="card">
+        <h2>🚨 Emergency Unstake</h2>
+        <p style="color: #ff4444;">⚠️ 5% penalty — only use in emergency!</p>
+        <button id="emergencyBtn" style="background: #ff4444; color: white;">Emergency Unstake</button>
+        <p id="emergencyStatus"></p>
+    </div>
+
     <script>
-        const CONTRACT_ADDRESS = "0x5F99d7C0733d5D11374a4696e344660aFD0d85D8";
+        const CONTRACT_ADDRESS = "0x8F1D52994fFa44eC4C28cf0e42E7A345A267a0b1";
 
 
         const ABI = [
             "function stake() public payable",
             "function unstake() public",
+            "function emergencyUnstake() public",
             "function getStakeInfo(address user) public view returns (uint256, uint256, uint256, bool)",
             "function getTimeLeft(address user) public view returns (uint256)"
         ];
@@ -168,6 +176,22 @@
             } catch(e) {
                 document.getElementById("unstakeStatus").className = "error";
                 document.getElementById("unstakeStatus").innerText = "❌ " + e.message;
+            }
+        };
+
+        document.getElementById("emergencyBtn").onclick = async () => {
+            try {
+                const confirm = window.confirm("⚠️ You will lose 5% of your stake as penalty. Continue?");
+                if (!confirm) return;
+                document.getElementById("emergencyStatus").innerText = "Processing...";
+                const tx = await contract.emergencyUnstake();
+                await tx.wait();
+                document.getElementById("emergencyStatus").className = "success";
+                document.getElementById("emergencyStatus").innerText = "✅ Emergency unstake successful!";
+                refreshInfo();
+            } catch(e) {
+                document.getElementById("emergencyStatus").className = "error";
+                document.getElementById("emergencyStatus").innerText = "❌ " + e.message;
             }
         };
     </script>

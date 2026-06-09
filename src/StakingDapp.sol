@@ -22,6 +22,7 @@ contract StakingDapp {
     // 4. Events
     event Staked(address indexed user, uint256 amount, uint256 timestamp);
     event Unstaked(address indexed user, uint256 amount);
+    event EmergencyUnstaked(address indexed user, uint256 returned, uint256 penalty);
    
     // 5. Modifiers
     modifier onlyOwner() {
@@ -64,6 +65,27 @@ contract StakingDapp {
 
         payable(msg.sender).transfer(totalToTransfer);
         emit Unstaked(msg.sender, totalToTransfer);
+    }
+
+    function emergencyUnstake() public {
+        StakeInfo storage userStake = stakes[msg.sender];
+        require(userStake.isStaking, "No active stake found");
+        require(block.timestamp < userStake.timestamp + LOCK_PERIOD, "Lock period is over, use regular unstake");
+
+        uint256 stakedAmount = userStake.amount;
+        uint256 penalty = (stakedAmount * 5) / 100;
+        uint256 amountToReturn = stakedAmount - penalty;
+
+        userStake.amount = 0;
+        userStake.timestamp = 0;
+        userStake.reward= 0;
+        userStake.isStaking = false;
+        
+        (bool success, ) = payable(msg.sender).call{value: amountToReturn} ("");
+        require(success, "Transfer Failed");
+
+        emit EmergencyUnstaked(msg.sender, amountToReturn, penalty);
+
     }
     function depositRewardPool() public payable onlyOwner {
         require(msg.value > 0, "Must deposit more than 0");
