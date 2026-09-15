@@ -6,13 +6,14 @@ contract StakingDapp {
     // 1. State variables
     uint256 public constant LOCK_PERIOD = 30 days;
     uint256 public constant REWARD_RATE = 10;
+    uint256 public constant EMERGENCY_PENALTY_RATE = 5;
     address public owner;
 
     // 2. Struct
     struct StakeInfo {
         uint256 amount;
         uint256 timestamp;
-        uint256 reward;
+        uint256 reward;     // dicadangkan untuk V3 (reward dinamis) — selalu 0 untuk saat ini
         bool isStaking;
     }
 
@@ -23,7 +24,8 @@ contract StakingDapp {
     event Staked(address indexed user, uint256 amount, uint256 timestamp);
     event Unstaked(address indexed user, uint256 amount);
     event EmergencyUnstaked(address indexed user, uint256 returned, uint256 penalty);
-   
+    event RewardPoolDeposited(address indexed owner, uint256 amount);
+
     // 5. Modifiers
     modifier onlyOwner() {
         require(msg.sender == owner, "Not owner");
@@ -54,10 +56,16 @@ contract StakingDapp {
         StakeInfo storage userStake = stakes[msg.sender];
         require(userStake.isStaking, "You are not staking");
         require(block.timestamp >= userStake.timestamp + LOCK_PERIOD, "Lock period not over");
-        
+
         uint256 rewardAmount = (userStake.amount * REWARD_RATE) / 100;
         uint256 totalToTransfer = userStake.amount + rewardAmount;
-        
+
+        // Cek saldo reward pool SEBELUM reset state (tahap "checks")
+        require(
+            address(this).balance >= totalToTransfer,
+            "Insufficient reward pool, contact owner"
+        );
+
         userStake.amount = 0;
         userStake.timestamp = 0;
         userStake.reward = 0;
@@ -75,25 +83,27 @@ contract StakingDapp {
         require(block.timestamp < userStake.timestamp + LOCK_PERIOD, "Lock period is over, use regular unstake");
 
         uint256 stakedAmount = userStake.amount;
-        uint256 penalty = (stakedAmount * 5) / 100;
+        uint256 penalty = (stakedAmount * EMERGENCY_PENALTY_RATE) / 100;
         uint256 amountToReturn = stakedAmount - penalty;
 
         userStake.amount = 0;
         userStake.timestamp = 0;
-        userStake.reward= 0;
+        userStake.reward = 0;
         userStake.isStaking = false;
-        
-        (bool success, ) = payable(msg.sender).call{value: amountToReturn} ("");
+
+        (bool success, ) = payable(msg.sender).call{value: amountToReturn}("");
         require(success, "Transfer Failed");
 
         emit EmergencyUnstaked(msg.sender, amountToReturn, penalty);
-
     }
+
     function depositRewardPool() public payable onlyOwner {
         require(msg.value > 0, "Must deposit more than 0");
+        emit RewardPoolDeposited(msg.sender, msg.value);
     }
+
     // 8. View functions
-    function getStakeInfo(address _user) public view returns (uint256 amount, uint256 timestamp,  uint256 reward, bool isStaking) {
+    function getStakeInfo(address _user) public view returns (uint256 amount, uint256 timestamp, uint256 reward, bool isStaking) {
         StakeInfo memory tempStake = stakes[_user];
         return (tempStake.amount, tempStake.timestamp, tempStake.reward, tempStake.isStaking);
     }
@@ -112,5 +122,9 @@ contract StakingDapp {
         } else {
             return unlockTime - block.timestamp;
         }
+    }
+
+    function getRewardPoolBalance() public view returns (uint256) {
+        return address(this).balance;
     }
 }
